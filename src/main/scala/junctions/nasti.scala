@@ -138,11 +138,11 @@ object NastiWriteResponseBundle {
 }
 
 class NastiBundle(params: NastiBundleParameters) extends Bundle {
-  val aw = Decoupled(new NastiAddressBundle(params))
-  val w = Decoupled(new NastiWriteDataBundle(params))
-  val b = Flipped(Decoupled(new NastiWriteResponseBundle(params)))
-  val ar = Decoupled(new NastiAddressBundle(params))
-  val r = Flipped(Decoupled(new NastiReadDataBundle(params)))
+  val aw = Decoupled(new NastiAddressBundle(params)) // write address channeal
+  val w = Decoupled(new NastiWriteDataBundle(params)) // write data channeal
+  val b = Flipped(Decoupled(new NastiWriteResponseBundle(params))) // wirte back data channeal
+  val ar = Decoupled(new NastiAddressBundle(params))  // read address channeal
+  val r = Flipped(Decoupled(new NastiReadDataBundle(params))) // raed data channeal 
 }
 
 class NastiArbiterIO(params: NastiBundleParameters, arbN: Int) extends Bundle {

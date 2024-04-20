@@ -7,7 +7,7 @@ import chisel3.util._
 import chisel3.experimental.BundleLiterals._
 
 object Consts {
-  val PC_START = 0x200
+  val PC_START = 0x200 // 0x8000_0000L
   val PC_EVEC = 0x100
 }
 
@@ -33,17 +33,16 @@ class ExecuteWritebackPipelineRegister(xlen: Int) extends Bundle {
 class Datapath(val conf: CoreConfig) extends Module {
   val io = IO(new DatapathIO(conf.xlen))
   val csr = Module(new CSR(conf.xlen))
-  val regFile = Module(new RegFile(conf.xlen))
+  val regFile = Module(new RegFile(conf.xlen))  // instantiate RegFile
   val alu = Module(conf.makeAlu(conf.xlen))
-  val immGen = Module(conf.makeImmGen(conf.xlen))
+  val immGen = Module(conf.makeImmGen(conf.xlen)) // instantiate ImmGen
   val brCond = Module(conf.makeBrCond(conf.xlen))
 
   import Control._
 
-  /** Pipeline State Registers * */
+  /** Pipeline State Registers **/
 
-  /** *** Fetch / Execute Registers ****
-    */
+  /** Fetch / Execute Registers **/
   val fe_reg = RegInit(
     (new FetchExecutePipelineRegister(conf.xlen)).Lit(
       _.inst -> Instructions.NOP,
@@ -51,8 +50,7 @@ class Datapath(val conf: CoreConfig) extends Module {
     )
   )
 
-  /** *** Execute / Write Back Registers ****
-    */
+  /** Execute / Write Back Registers **/
   val ew_reg = RegInit(
     (new ExecuteWritebackPipelineRegister(conf.xlen)).Lit(
       _.inst -> Instructions.NOP,
@@ -62,8 +60,7 @@ class Datapath(val conf: CoreConfig) extends Module {
     )
   )
 
-  /** **** Control signals ****
-    */
+  /** Control signals **/
   val st_type = Reg(io.ctrl.st_type.cloneType)
   val ld_type = Reg(io.ctrl.ld_type.cloneType)
   val wb_sel = Reg(io.ctrl.wb_sel.cloneType)
@@ -72,8 +69,7 @@ class Datapath(val conf: CoreConfig) extends Module {
   val illegal = Reg(Bool())
   val pc_check = Reg(Bool())
 
-  /** **** Fetch ****
-    */
+  /** Fetch **/
   val started = RegNext(reset.asBool)
   val stall = !io.icache.resp.valid || !io.dcache.resp.valid
   val pc = RegInit(Consts.PC_START.U(conf.xlen.W) - 4.U(conf.xlen.W))
@@ -88,8 +84,10 @@ class Datapath(val conf: CoreConfig) extends Module {
       (io.ctrl.pc_sel === PC_0) -> pc
     )
   )
-  val inst =
-    Mux(started || io.ctrl.inst_kill || brCond.io.taken || csr.io.expt, Instructions.NOP, io.icache.resp.bits.data)
+  val inst = Mux( started || io.ctrl.inst_kill || brCond.io.taken || csr.io.expt, 
+                  Instructions.NOP,         // NOP
+                  io.icache.resp.bits.data  // icache resp instruction
+                )
   pc := next_pc
   io.icache.req.bits.addr := next_pc
   io.icache.req.bits.data := 0.U
@@ -98,25 +96,25 @@ class Datapath(val conf: CoreConfig) extends Module {
   io.icache.abort := false.B
 
   // Pipelining
+  // Fetch to Execute
   when(!stall) {
-    fe_reg.pc := pc
-    fe_reg.inst := inst
+    fe_reg.pc := pc     // PC 
+    fe_reg.inst := inst // IR
   }
 
-  /** **** Execute ****
-    */
-  io.ctrl.inst := fe_reg.inst
+  /****** Execute *****/
+  io.ctrl.inst := fe_reg.inst   // 'Control' gets instruction, then sends signals to Outputs
 
   // regFile read
-  val rd_addr = fe_reg.inst(11, 7)
-  val rs1_addr = fe_reg.inst(19, 15)
-  val rs2_addr = fe_reg.inst(24, 20)
+  // val rd_addr = fe_reg.inst(11, 7)    // get rd
+  val rs1_addr = fe_reg.inst(19, 15)  // get rs1
+  val rs2_addr = fe_reg.inst(24, 20)  // get rs2
   regFile.io.raddr1 := rs1_addr
   regFile.io.raddr2 := rs2_addr
 
-  // gen immdeates
-  immGen.io.inst := fe_reg.inst
-  immGen.io.sel := io.ctrl.imm_sel
+  // gen immdeates input
+  immGen.io.inst  := fe_reg.inst
+  immGen.io.sel   := io.ctrl.imm_sel // 'Control' sends imm_sel to immGen
 
   // bypass
   val wb_rd_addr = ew_reg.inst(11, 7)
