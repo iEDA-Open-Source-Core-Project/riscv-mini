@@ -4,6 +4,7 @@ package mini
 
 import junctions.NastiBundleParameters
 
+// TODO:
 case class Config(core: CoreConfig, cache: CacheConfig, nasti: NastiBundleParameters)
 
 object MiniConfig {

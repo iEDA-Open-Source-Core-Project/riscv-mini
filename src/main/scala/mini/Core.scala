@@ -5,14 +5,17 @@ package mini
 import chisel3._
 import chisel3.util.Valid
 
+// TODO:
 case class CoreConfig(
   xlen:       Int,
   makeAlu:    Int => Alu = new AluSimple(_),
   makeBrCond: Int => BrCond = new BrCondSimple(_),
-  makeImmGen: Int => ImmGen = new ImmGenWire(_))
+  makeImmGen: Int => ImmGen = new ImmGenWire(_)
+)
 
+// the host is test/HEX files or chisel test case
 class HostIO(xlen: Int) extends Bundle {
-  val fromhost = Flipped(Valid(UInt(xlen.W)))
+  val fromhost = Flipped(Valid(UInt(xlen.W))) // it will generate a valid Input and an xlen bits Input 
   val tohost = Output(UInt(xlen.W))
 }
 

@@ -13,6 +13,8 @@ DVEfiles
 riscv-tools-priv1.7
 tests/32/*
 tests/64/*
+elf2hex
+riscv-tests
 
 # Scala IDEs
 .project
