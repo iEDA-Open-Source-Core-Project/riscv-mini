@@ -1,5 +1,5 @@
 # riscv-mini
-test
+
 Author: Donggyu Kim (dgkim@eecs.berkeley.edu)
 
 `riscv-mini` is a simple RISC-V 3-stage pipeline written in Chisel. It has been a crucial example in various project developments,
